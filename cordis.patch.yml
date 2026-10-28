@@ -2,4 +2,4 @@
 # profile's cordis.patch.yml can override its config or disable it by id.
 - insert:
     - id: openai-siwc
-      name: dsh-openai-siwc
+      name: '@hackforjoy/dsh-openai-siwc'

@@ -1,0 +1,35 @@
+name: release
+
+# Publishes to npm with npm Trusted Publishing: GitHub OIDC replaces a stored
+# npm token, and the published version carries a provenance attestation.
+# Configure the trusted publisher on npmjs.com (package settings → Trusted
+# Publisher → GitHub Actions: HackForJoy/dsh-openai-siwc, workflow release.yml).
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # version from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Use an npm CLI that supports trusted publishing
+        run: npm install --global npm@^11.5.1
+      - name: Tag must match package.json version
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          test "${GITHUB_REF_NAME}" = "v${version}" || { echo "tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm check
+      - run: npm publish --access public

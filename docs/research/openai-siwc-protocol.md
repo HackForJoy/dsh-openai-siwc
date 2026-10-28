@@ -1,5 +1,7 @@
 # OpenAI SIWC（ChatGPT plan usage for open-source）协议核实
 
+> 本文是对官方文档在核实当时的快照。官方文档更新后，以官方文档为准。
+
 > 核实日期：2026-10-28。唯一依据：developers.openai.com 官方文档（各页 `.md` 原文）与 `https://auth.openai.com/.well-known/openid-configuration`。
 > 标记说明：✅ = 官方文档明确；⚠️ = 官方文档未明确，**待验证**，实现中不假设。
 

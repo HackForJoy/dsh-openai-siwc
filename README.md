@@ -1,215 +1,161 @@
 # dsh-openai-siwc
 
-为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）提供的 LLM provider 插件。它通过 OpenAI 官方的 **Sign in with ChatGPT —— 面向开源客户端的 ChatGPT plan usage** 机制（SIWC），让 DSH 使用你的 ChatGPT 账号和套餐额度调用模型。
+English | [中文](README.zh.md)
 
-> 这是社区插件，**与 OpenAI、DeepSeek 均无隶属或背书关系**。
-> 协议实现只以官方文档为依据：<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>（详见 [`docs/research/openai-siwc-protocol.md`](docs/research/openai-siwc-protocol.md)）。
+An LLM provider plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH). It uses OpenAI's official **Sign in with ChatGPT — ChatGPT plan usage for open-source clients** (SIWC) so DSH can call models with your ChatGPT account and plan.
 
-它**不是**下面这两样东西：
+> This is a community plugin. It is **not affiliated with or endorsed by OpenAI or DeepSeek**.
+> The protocol is implemented strictly from the official documentation: <https://developers.openai.com/siwc/token-sharing-open-source/sign-in> (see [`docs/research/openai-siwc-protocol.md`](docs/research/openai-siwc-protocol.md)).
 
-- 不是传统的 Codex OAuth（DSH 内置的 `openai-codex` provider 用的是那种）；
-- 不是 OpenAI API Key provider。它不会把 SIWC token 当作 API key，也不会在失败时切换到其他计费方式。
+It is **not**:
 
-## 使用条件
+- traditional Codex OAuth (what DSH's built-in `openai-codex` provider uses);
+- an OpenAI API key provider. It never treats a SIWC token as an API key and never falls back to another billing path when a request fails.
 
-- OpenAI 官方说明：ChatGPT plan usage 面向**合格的 ChatGPT Plus / Pro 用户**，适用于开源、本地运行的应用。其他套餐不保证可用。服务端返回 `subscription_sharing_user_not_eligible` 时，插件会原样告知。
-- DSH 0.2.1-rc.3（`@deepseek-ai/cordis ~4.0.5`）、Node.js ≥ 22。
-- Plus 用户的 5 小时用量上限在所有使用 ChatGPT plan 的应用间共享。用量与授权管理：<https://chatgpt.com/settings/usage>。
+## Requirements
 
-## 安装
+- Per OpenAI, ChatGPT plan usage is for **eligible ChatGPT Plus / Pro users** in open-source, locally run apps. An ineligible account (for example ChatGPT Free) is refused during sign-in, at the code exchange (`invalid_grant`).
+- Compatibility: verified with **DSH 0.2.1-rc.3** (`@deepseek-ai/cordis ~4.0.5`); Node.js ≥ 22. The DSH SDK is still pre-release and changes incompatibly between versions, so peer dependencies are pinned exactly and a matching plugin release follows each DSH update.
+- For Plus users, the five-hour usage limit is shared across every app that uses the ChatGPT plan. Manage usage and app access at <https://chatgpt.com/settings/usage>.
 
-已在 DSH 0.2.1-rc.3 上验证：安装、挂载、`/siwc` 命令注册均正常（在隔离的 `DSH_HOME` 中验证）。
+## Install
 
-1. 构建并打包：
-   ```sh
-   pnpm install --frozen-lockfile --ignore-scripts
-   pnpm check          # 类型检查 + 测试 + 构建
-   pnpm pack:verify    # 生成 dsh-openai-siwc-<版本>.tgz 并打印 SHA-256
-   ```
-2. 用 DSH 自带的 CLI 安装到某个 profile（会自动写入该 profile 的 `dependencies` 和 `dsh.profile.bundles`）：
-   ```sh
-   DSH="/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"
-   "$DSH" plugin --profile <profile> add "file:/绝对路径/dsh-openai-siwc-0.1.0.tgz"
-   ```
-   建议先装进一个**独立的测试 profile**，甚至独立的 `DSH_HOME`（例如 `DSH_HOME=~/.dsh-siwc-test`），不要直接改日常使用的 profile。
-3. 启动该 profile，例如 `"$DSH" <profile> --host 127.0.0.1 --port 0`。插件随包提供的 `cordis.patch.yml` 会以 id `openai-siwc` 挂载插件。
+Install into a profile with the DSH CLI (it records the plugin in the profile's `dependencies` and `dsh.profile.bundles`):
 
-**升级**：重新打包的版本号不变时，`plugin add` 不会替换已安装的副本。请先执行 `"$DSH" plugin --profile <profile> remove dsh-openai-siwc`，再执行 `add`，然后重启 DSH。
+```sh
+DSH="/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"   # macOS
+"$DSH" plugin --profile <profile> add @hackforjoy/dsh-openai-siwc
+```
 
-pnpm 会提示缺少 `@deepseek-ai/*` peer 依赖，这是正常的：这些包由 DSH 宿主提供（DSH 官方的第三方插件 `dsh-subagent-codex` 也是这样）。
+Then start the profile (for example `"$DSH" <profile>`). The bundled `cordis.patch.yml` mounts the plugin under the id `openai-siwc`.
 
-## 配置（可选）
+- Consider trying it in a separate profile, or even a separate `DSH_HOME` (e.g. `DSH_HOME=~/.dsh-siwc-test`), before adding it to the profile you use every day.
+- pnpm warns about missing `@deepseek-ai/*` peer dependencies. That is expected: the DSH host provides them (DSH's own third-party plugin `dsh-subagent-codex` works the same way).
+- **Upgrade**: `"$DSH" plugin --profile <profile> add @hackforjoy/dsh-openai-siwc@<new version>`, then restart DSH.
 
-在 profile 的 `cordis.patch.yml` 中按 id 覆盖：
+To install from source, see [Development](#development).
+
+## Configuration (optional)
+
+Override by id in the profile's `cordis.patch.yml`:
 
 ```yaml
 - id: openai-siwc
-  name: dsh-openai-siwc
+  name: '@hackforjoy/dsh-openai-siwc'
   config:
-    defaultContextWindow: 128000     # 仅用于目录中没有给出 context_window 的模型
+    defaultContextWindow: 128000     # only for models whose catalog entry has no context_window
     models:
       some-model-slug:
-        contextWindow: 200000        # 按模型覆盖
-    streamIdleTimeoutMs: 300000      # 流式响应允许的最长静默时间
-    maxRequestImageBytes: 20971520   # 单个请求的 base64 图片上限，超出时由 DSH 卸载最早的图片
+        contextWindow: 200000        # per-model override
+    streamIdleTimeoutMs: 300000      # longest silence tolerated on an open stream
+    maxRequestImageBytes: 20971520   # base64 image budget per request; DSH offloads the oldest images beyond it
 ```
 
-OpenAI 端点**不可配置**（防止 token 被发往其他地址）。
+The OpenAI endpoints are **not configurable**, so a tampered configuration cannot send tokens elsewhere.
 
-## 登录
+## Sign in
 
-DSH 0.2.1 的设置页面还没有给第三方授权流程提供入口，所以登录通过斜杠命令完成：
+DSH 0.2.1's settings UI has no entry point for third-party authorization flows yet, so sign-in uses a slash command:
 
-1. 在会话输入框中执行 `/siwc login`（如需添加另一个 ChatGPT 账号，执行 `/siwc login new`）。
-2. 插件会打开**系统浏览器**（官方要求）。在浏览器中登录 ChatGPT，确认 agent 名称（默认 "DSH OpenAI SIWC"），并**允许使用 ChatGPT plan**。
-3. 浏览器回到 `http://127.0.0.1:<随机端口>/auth/callback`，显示 "Sign-in finished" 后即可关闭；命令会输出 "Signed in to ChatGPT as …"。
+1. Run `/siwc login` **inside a conversation** (`/siwc login new` adds another ChatGPT account). The empty composer on the DSH home page does not display command output.
+2. The plugin opens your **system browser** (as the official docs require). Sign in to ChatGPT, confirm the agent name ("DSH OpenAI SIWC"), and **allow ChatGPT plan usage**.
+3. The browser returns to `http://127.0.0.1:<random port>/auth/callback` and shows "Sign-in finished"; the command prints "Signed in to ChatGPT as …".
 
-命令结果会显示在会话中（DSH 首页的空白输入框不会显示命令输出，请在已有会话中执行）。授权链接只交给浏览器，不会出现在命令输出或会话日志中。如果没有授予 plan usage 权限，插件会保留登录状态，但推理请求会报 `SIWC_PLAN_USAGE_DISABLED`。重新登录并允许即可。
+The authorization URL goes only to the browser; it never appears in command output or session logs. If plan usage is not granted, the plugin keeps the sign-in but requests fail with `SIWC_PLAN_USAGE_DISABLED` — sign in again and allow it.
 
-## 使用条件
+## Usage
 
-- OpenAI 官方说明：ChatGPT plan usage 面向**合格的 ChatGPT Plus / Pro 用户**，适用于开源、本地运行的应用。其他套餐不保证可用。服务端返回 `subscription_sharing_user_not_eligible` 时，插件会原样告知。
-- DSH 0.2.1-rc.3（`@deepseek-ai/cordis ~4.0.5`）、Node.js ≥ 22。
-- Plus 用户的 5 小时用量上限在所有使用 ChatGPT plan 的应用间共享。用量与授权管理：<https://chatgpt.com/settings/usage>。
+- Pick a model under **ChatGPT plan (Sign in with ChatGPT)** in the model picker. The list comes from your account's `GET /v1/models` (only `visibility: "list"` entries) and refreshes when you switch accounts.
+- Supported: text, streaming, multi-turn conversations, tool calls (wrapped in a namespace named `dsh`, as the docs require), image input, and reasoning effort. Model capabilities — input types, context window, reasoning levels — come from the account's model catalog; nothing is guessed.
+- Slash commands (when DSH mounts the commands service):
+  - `/siwc login [new]` — sign in (see above);
+  - `/siwc status` — sign-in state, plan usage, granted scopes, token lifetime, the last sign-in failure and model-list error (never any token);
+  - `/siwc models` — fetch the current account's model list;
+  - `/siwc logout` — sign out (see below).
 
-## 安装
+### Differences from other providers
 
-已在 DSH 0.2.1-rc.3 上验证：安装、挂载、`/siwc` 命令注册均正常（在隔离的 `DSH_HOME` 中验证）。
-
-1. 构建并打包：
-   ```sh
-   pnpm install --frozen-lockfile --ignore-scripts
-   pnpm check          # 类型检查 + 测试 + 构建
-   pnpm pack:verify    # 生成 dsh-openai-siwc-<版本>.tgz 并打印 SHA-256
-   ```
-2. 用 DSH 自带的 CLI 安装到某个 profile（会自动写入该 profile 的 `dependencies` 和 `dsh.profile.bundles`）：
-   ```sh
-   DSH="/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"
-   "$DSH" plugin --profile <profile> add "file:/绝对路径/dsh-openai-siwc-0.1.0.tgz"
-   ```
-   建议先装进一个**独立的测试 profile**，甚至独立的 `DSH_HOME`（例如 `DSH_HOME=~/.dsh-siwc-test`），不要直接改日常使用的 profile。
-3. 启动该 profile，例如 `"$DSH" <profile> --host 127.0.0.1 --port 0`。插件随包提供的 `cordis.patch.yml` 会以 id `openai-siwc` 挂载插件。
-
-**升级**：重新打包的版本号不变时，`plugin add` 不会替换已安装的副本。请先执行 `"$DSH" plugin --profile <profile> remove dsh-openai-siwc`，再执行 `add`，然后重启 DSH。
-
-pnpm 会提示缺少 `@deepseek-ai/*` peer 依赖，这是正常的：这些包由 DSH 宿主提供（DSH 官方的第三方插件 `dsh-subagent-codex` 也是这样）。
-
-## 配置（可选）
-
-在 profile 的 `cordis.patch.yml` 中按 id 覆盖：
-
-```yaml
-- id: openai-siwc
-  name: dsh-openai-siwc
-  config:
-    defaultContextWindow: 128000     # 仅用于目录中没有给出 context_window 的模型
-    models:
-      some-model-slug:
-        contextWindow: 200000        # 按模型覆盖
-    streamIdleTimeoutMs: 300000      # 流式响应允许的最长静默时间
-    maxRequestImageBytes: 20971520   # 单个请求的 base64 图片上限，超出时由 DSH 卸载最早的图片
-```
-
-OpenAI 端点**不可配置**（防止 token 被发往其他地址）。
-
-## 登录
-
-1. DSH → 设置 → Authorization → **ChatGPT plan (Sign in with ChatGPT)** → **Continue with ChatGPT**。
-2. 如果之前登录过，先选择已保存的账号，或选"Use a different ChatGPT account"。
-3. 在打开的浏览器页面中登录 ChatGPT、确认 agent 名称（默认 "DSH OpenAI SIWC"）并**允许使用 ChatGPT plan**。
-4. 浏览器回到 `http://127.0.0.1:<随机端口>/auth/callback`，显示 "Sign-in finished" 后即可关闭。
-
-如果没有授予 plan usage 权限，插件会保留登录状态，但推理请求会报 `SIWC_PLAN_USAGE_DISABLED`。重新登录并允许即可。
-
-## 使用
-
-- 在模型选择器中选择 `openai-siwc` 下的模型。模型列表来自你账号的 `GET /v1/models`（只显示 `visibility: "list"` 的模型），换账号后会刷新。
-- 支持文本、流式输出、多轮对话、工具调用（工具被包进名为 `dsh` 的 namespace，这是官方要求）、图片输入和推理强度选择。模型能力（输入类型、上下文窗口、推理档位）都来自账号的模型目录，不做猜测。
-- 斜杠命令（需要 DSH 加载 commands 服务）：
-  - `/siwc login [new]`：登录（见上文）；
-  - `/siwc status`：登录状态、plan usage 状态、授予的 scope、token 剩余时间、最近一次模型列表错误（不显示任何 token）；
-  - `/siwc models`：实时拉取当前账号的模型列表；
-  - `/siwc logout`：登出（见下文）。
-
-### 与其他 provider 的行为差异
-
-| DSH 参数 | 行为 | 原因 |
+| DSH parameter | Behavior | Why |
 |---|---|---|
-| `temperature` | **报错** `UNSUPPORTED_PARAMETER` | 官方禁止该字段；静默丢弃会改变输出 |
-| `stop` | **报错** `UNSUPPORTED_PARAMETER` | Responses API 没有 stop 序列 |
-| `reasoningEffort` | 映射为 `reasoning.effort` | 可选档位来自账号模型目录，并与 API 允许的值取交集（例如目录中的 `ultra` 不被 API 接受，会被去掉）。选择 Default 时使用服务端自己的默认值 |
-| `maxTokens` | **不发送**，记录一次日志 | 官方禁止 `max_output_tokens`。DSH 的 compaction 和会话标题总会带上它；它只是上限，忽略不影响正确性 |
-| 图片输入 | 目录声明支持图片的模型：以内联 data URL 发送（含工具结果中的图片）；纯文本模型：用文本占位符代替 | 单个请求默认最多 20 MiB base64 图片（`maxRequestImageBytes`），超出时由 DSH 卸载最早的图片 |
-| 推理内容回放 | 不回放 | `store:false`，且没有加密推理内容 |
+| `temperature` | **Error** `UNSUPPORTED_PARAMETER` | Forbidden by the docs; silently dropping it would change the output |
+| `stop` | **Error** `UNSUPPORTED_PARAMETER` | The Responses API has no stop sequences |
+| `reasoningEffort` | Sent as `reasoning.effort` | Levels come from the account catalog, intersected with the values the API accepts (the catalog's `ultra` is rejected by the API and therefore dropped). "Default" leaves the server's own default |
+| `maxTokens` | **Not sent**, logged once | The docs forbid `max_output_tokens`. DSH's compaction and session titles always pass it; it is only a cap, so omitting it does not affect correctness |
+| Image input | Image-capable models (per catalog): inline data URLs, including images in tool results. Text-only models: text placeholders | At most 20 MiB of base64 images per request by default (`maxRequestImageBytes`); beyond that DSH offloads the oldest images |
+| Reasoning replay | Not replayed | `store: false`, and no encrypted reasoning content is available |
 
-## 登出
+## Sign out
 
 ```
 /siwc logout
 ```
 
-依次执行：停止使用 token → 向 OpenAI 撤销 refresh token（失败时重试）→ 删除本地 token。已注册的 client_id 和本机 host id 会保留，下次登录时复用。如果撤销未能确认，插件会明确提示，此时可以在 ChatGPT 设置中手动断开该 app。
+Stops using the tokens, revokes the refresh token with OpenAI (retrying on failure), then deletes the local tokens. The issued client id and this host's id are kept for the next sign-in. If revocation cannot be confirmed, the plugin says so; you can then disconnect the app in ChatGPT settings.
 
-> 在 DSH 设置中直接删除 `openai-siwc/session` 记录**只做本地删除，不会远程撤销**。
+> Deleting the `openai-siwc/session` record in DSH settings is **local only** and does not revoke the session remotely.
 
-## 卸载
+## Uninstall
 
-1. 先执行 `/siwc logout`（撤销远程会话）；
-2. 从 profile 的 `dependencies` 和 `dsh.profile.bundles` 中移除 `dsh-openai-siwc`，重启 DSH；
-3. 卸载**不会**自动删除凭证记录（DSH 的设计）。如需彻底清理，请在 DSH 设置中删除 `openai-siwc/session` 和 `openai-siwc/registry`。删除 registry 后，下次登录会注册一个新的 client 和 host id。
+1. Run `/siwc logout` first (revokes the remote session);
+2. `"$DSH" plugin --profile <profile> remove @hackforjoy/dsh-openai-siwc`, then restart DSH;
+3. Uninstalling does **not** delete credential records (by DSH design). For a full cleanup, delete `openai-siwc/session` and `openai-siwc/registry` in DSH settings. Without the registry, the next sign-in registers a new client and host id.
 
-## 凭证存储
+## Credential storage
 
-凭证存放在 DSH 凭证存储中（默认 `~/.dsh/.credentials.yaml`，权限 `0600`，原子写入），包括两条记录：
+Credentials live in the DSH credential store (default `~/.dsh/.credentials.yaml`, mode `0600`, atomic writes) as two records:
 
-- `openai-siwc/registry`：本机 host id（`urn:uuid:…`）以及已注册账号（client_id、sub、email）；
-- `openai-siwc/session`：当前账号的 access/refresh/ID token、授予的 scope 和过期时间。
+- `openai-siwc/registry` — this host's id (`urn:uuid:…`) and registered accounts (client_id, sub, email);
+- `openai-siwc/session` — the current account's access/refresh/ID tokens, granted scopes, and expiry.
 
-刷新在 DSH 的跨进程独占写入中执行，多个 DSH 进程不会争用同一个轮换的 refresh token。安全设计见 [`docs/security/threat-model.md`](docs/security/threat-model.md)。
+Refresh runs inside DSH's cross-process exclusive write, so several DSH processes never race a rotating refresh token. See [`docs/security/threat-model.md`](docs/security/threat-model.md) for the security design and [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
-## 常见问题
+## Troubleshooting
 
-| 现象 / 错误码 | 原因与处理 |
+| Symptom / code | Cause and fix |
 |---|---|
-| `MISSING_CREDENTIAL` | 未登录。执行 `/siwc login` |
-| `SIWC_PLAN_USAGE_DISABLED` | 登录时没有授予 plan usage。执行 `/siwc login` 并允许 |
-| "Could not open the system browser" | 插件无法启动系统浏览器（例如在无图形界面的环境中）；本插件只支持在本机运行 |
-| 登录报 `invalid_grant` | 最常见的原因是账号**不是 Plus/Pro**（Free 账号会在换码这一步被拒绝）。升级后重新执行 `/siwc login`，插件会复用已保留的 client ID |
-| 登录报 "declined in the browser" | 在浏览器中拒绝了授权。可以重新登录并允许，或改用其他 provider（例如你自己的 API key） |
-| 登录报 "Registration incomplete" | 回调中没有颁发的 client_id。重新登录 |
-| 登录报 "ID token failed validation" | ID token 未通过签名或 claim 校验，插件拒绝保存。检查系统时间后重试 |
-| `QUOTA`（`subscription_sharing_usage_limit_exceeded`） | 达到 ChatGPT plan 的用量上限（可能是这个 app 单独的上限）。在 <https://chatgpt.com/settings/usage> 查看。插件不会自动重试 |
-| `SIWC_NOT_ELIGIBLE` | 该用户、workspace 或策略不支持 plan usage。不会重试 |
-| `SIWC_UNSUPPORTED_CAPABILITY` | 请求中包含不支持的输入、工具或模型；错误信息里的 `param=` 指出了具体是哪一项 |
-| `AUTH`（401） | token 或权限未被接受。先执行 `/siwc status`；只有当会话确认已被撤销时才需要重新登录 |
-| `SERVER`（503，如 `usage_unavailable`） | 临时故障，DSH 会按重试策略重试，凭证会保留 |
-| `TRANSPORT`："stream ended before response.completed" | 连接中断，可以重试 |
-| 模型列表为空 | 未登录，或拉取失败；`/siwc status` 会显示最近一次错误 |
+| `MISSING_CREDENTIAL` | Not signed in. Run `/siwc login` |
+| `SIWC_PLAN_USAGE_DISABLED` | Plan usage was not granted at sign-in. Run `/siwc login` and allow it |
+| Sign-in fails with `invalid_grant` | Most often the account is not Plus/Pro (Free accounts are refused at the code exchange). After upgrading, run `/siwc login` again; the plugin reuses the client id it kept |
+| "Could not open the system browser" | No system browser could be launched (e.g. a headless machine); the plugin only supports running locally |
+| Sign-in reports "declined in the browser" | Authorization was declined. Sign in again and allow it, or use another provider (such as your own API key) |
+| Sign-in reports "Registration incomplete" | The callback carried no issued client_id. Sign in again |
+| Sign-in reports "ID token failed validation" | The ID token failed signature or claim checks and was not stored. Check the system clock and retry |
+| `QUOTA` (`subscription_sharing_usage_limit_exceeded`) | ChatGPT plan usage limit reached (possibly a per-app limit). See <https://chatgpt.com/settings/usage>. Not retried automatically |
+| `SIWC_NOT_ELIGIBLE` | Plan usage is unavailable for this user, workspace, or policy. Not retried |
+| `SIWC_UNSUPPORTED_CAPABILITY` | The request used an unsupported input, tool, or model; `param=` in the message names it |
+| `AUTH` (401) | The token or permission was not accepted. Check `/siwc status`; sign in again only after the session is confirmed revoked |
+| `SERVER` (503, e.g. `usage_unavailable`) | Temporary; DSH retries per its retry policy and credentials are kept |
+| `TRANSPORT`: "stream ended before response.completed" | Connection interrupted; retry |
+| Empty model list | Not signed in, or the fetch failed; `/siwc status` shows the last error |
 
-所有错误消息都包含 HTTP 状态和 OpenAI 的 request id（如果有），但不包含任何 token。
+Every error message includes the HTTP status and OpenAI's request id when available, and never a token.
 
-## 开发
+## Development
 
 ```sh
 pnpm install --frozen-lockfile --ignore-scripts
-pnpm typecheck   # tsc --noEmit（含测试）
-pnpm test        # vitest：单元测试 + 集成测试（真实的 DSH 服务 + 本地 mock OpenAI）
-pnpm build       # 输出到 lib/
-pnpm pack:verify # 打包并输出 SHA-256，用于校验构建产物
+pnpm typecheck   # tsc --noEmit (including tests)
+pnpm test        # vitest: unit + integration tests (real DSH services + local mock OpenAI)
+pnpm build       # output to lib/
+pnpm pack:verify # pack and print the SHA-256 of the build artifact
 ```
 
-集成测试会挂载真实的 `@deepseek-ai/dsh-llm`、`dsh-authorization`、`dsh-credentials-local`（凭证写在临时目录），并对接 `tests/helpers/mock-openai.ts`。这个 mock 严格实现官方协议：校验 PKCE，强制 `redirect_uri`/`resource`/`client_id` 一致，refresh token 轮换并拒绝重用，拒绝禁用字段。测试会把 `DSH_HOME` 指向临时目录，绝不触碰真实的 `~/.dsh`。
+Install a local build into DSH: `"$DSH" plugin --profile <profile> add "file:/absolute/path/hackforjoy-dsh-openai-siwc-<version>.tgz"`. Re-installing the same version requires `remove` then `add`.
 
-**模拟测试不能替代真实兼容性验证**，见下文。
+The integration tests mount the real `@deepseek-ai/dsh-llm`, `dsh-authorization`, `dsh-credentials-local`, and `dsh-attachment-local` (all on temp directories) against `tests/helpers/mock-openai.ts`. The mock implements the official protocol strictly — PKCE is verified, `redirect_uri`/`resource`/`client_id` must match, refresh tokens rotate and reuse is rejected, forbidden fields are refused — and reproduces live behavior observed on the real endpoint (SSE without `Content-Type`, `x-oai-request-id`). `DSH_HOME` points at a temp directory, so tests never touch a real `~/.dsh`.
 
-## 验收状态与限制
+Releases on npm are published from GitHub Actions with npm Trusted Publishing and carry provenance; the npm page (or `npm view @hackforjoy/dsh-openai-siwc --json`) links each version to the source commit and workflow run that built it.
 
-- **真实环境验收（DSH 0.2.1-rc.3，具备资格的 ChatGPT 账号）**：登录、模型列表、流式文本、多轮对话、工具调用往返、令牌刷新与轮换、登出与远程撤销均已通过；日志与会话文件中没有 token。不符合资格的账号（如 ChatGPT Free）无法完成登录（换码返回 `invalid_grant`）。详情见 [`docs/research/openai-siwc-protocol.md` §16](docs/research/openai-siwc-protocol.md)。
-- 退出后再次登录、图片输入、推理强度也已在真实环境中验证（§16）。尚未在真实环境验证：`/siwc login new` 添加第二个账号、`IMAGE_OFFLOAD_REQUIRED` 的真实触发（服务端的图片上限未公布）。
-- 官方文档未明确、通过真实环境确认的事项见 [`docs/research/openai-siwc-protocol.md` §16](docs/research/openai-siwc-protocol.md)。
-- 只支持单个活动账号（可以保存多个账号并在登录时选择）。
-- 架构决策见 [`docs/adr/ADR-001-siwc-provider-plugin.md`](docs/adr/ADR-001-siwc-provider-plugin.md)。
+See [CONTRIBUTING.md](CONTRIBUTING.md) to contribute and [CHANGELOG.md](CHANGELOG.md) for release notes.
 
-## 许可证
+## Verification status and limitations
 
-MIT，见 [LICENSE](LICENSE)。
+- **Verified against the real service (DSH 0.2.1-rc.3, an eligible ChatGPT account)**: sign-in, sign-in again after logout, model list, streaming text, multi-turn, tool-call round trips, token refresh and rotation, reasoning effort, image input, logout with remote revocation; no tokens in logs or session files.
+- Not yet verified against the real service: adding a second account with `/siwc login new`; a real `IMAGE_OFFLOAD_REQUIRED` (the server's image limit is unpublished).
+- Behavior the official docs leave open, as observed on the real service: [`docs/research/openai-siwc-protocol.md` §16](docs/research/openai-siwc-protocol.md).
+- One active account at a time (several can be saved and chosen at sign-in).
+- Architecture decisions: [`docs/adr/ADR-001-siwc-provider-plugin.md`](docs/adr/ADR-001-siwc-provider-plugin.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).

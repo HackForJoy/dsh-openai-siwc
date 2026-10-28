@@ -9,7 +9,7 @@
 
 ## 决策
 
-### D1 形态：独立 cordis 插件包 `dsh-openai-siwc`，零核心改动
+### D1 形态：独立 cordis 插件包 `@hackforjoy/dsh-openai-siwc`，零核心改动
 
 - 注册名（cordis `name`，同时是凭证记录 scope）：`openai-siwc`；provider 路由：`openai-siwc`。
 - `inject: ['llm', 'credentials', 'authorization']`；可选的 `/siwc` 命令通过嵌套 `ctx.inject(['commands'], …)` 挂载（cordis 4 无可选注入）。

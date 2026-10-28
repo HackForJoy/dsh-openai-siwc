@@ -1,8 +1,29 @@
 {
-  "name": "dsh-openai-siwc",
-  "description": "DeepSeek Harness LLM provider using OpenAI Sign in with ChatGPT (ChatGPT plan usage for open-source clients)",
+  "name": "@hackforjoy/dsh-openai-siwc",
+  "description": "Community DeepSeek Harness (DSH) LLM provider using OpenAI Sign in with ChatGPT (ChatGPT plan usage for open-source clients). Not affiliated with OpenAI or DeepSeek.",
   "version": "0.1.0",
   "license": "MIT",
+  "author": "kai-xx (https://github.com/kai-xx)",
+  "homepage": "https://github.com/HackForJoy/dsh-openai-siwc#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HackForJoy/dsh-openai-siwc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HackForJoy/dsh-openai-siwc/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "llm-provider",
+    "openai",
+    "chatgpt",
+    "sign-in-with-chatgpt",
+    "siwc",
+    "responses-api"
+  ],
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -19,18 +40,25 @@
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "README.md",
+    "README.zh.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "engines": {
     "node": ">=22"
   },
   "packageManager": "pnpm@11.21.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "rm -rf lib && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "check": "pnpm typecheck && pnpm test && pnpm build",
-    "pack:verify": "pnpm build && pnpm pack && shasum -a 256 dsh-openai-siwc-*.tgz"
+    "pack:verify": "pnpm build && pnpm pack && shasum -a 256 hackforjoy-dsh-openai-siwc-*.tgz",
+    "prepublishOnly": "pnpm check"
   },
   "dsh": {
     "bundle": {
