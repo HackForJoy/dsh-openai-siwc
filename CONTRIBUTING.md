@@ -28,6 +28,7 @@ Add or update tests with every behavior change. Tests must stay offline and must
 
 1. Update `version` in `package.json` and move the "Unreleased" notes in `CHANGELOG.md` under the new version.
 2. Commit, then tag `v<version>` and push the tag.
-3. The `release` workflow verifies the tag matches `package.json`, runs `pnpm check`, and publishes to npm through **npm Trusted Publishing** (GitHub OIDC, no stored token) with provenance.
+3. The `release` workflow verifies the tag matches `package.json`, runs `pnpm check`, and creates a GitHub Release with the CHANGELOG notes, the npm tarball, and `SHA256SUMS`.
+4. When the repository variable `NPM_TRUSTED_PUBLISHING` is `true`, the same workflow publishes to npm through **npm Trusted Publishing** (GitHub OIDC, no stored token) with provenance. A version already on npm is skipped, so the job can be re-run.
 
 When the DSH SDK version changes, update the exact `@deepseek-ai/*` peer and dev versions, re-run the tests, and verify against the matching DSH release before publishing.
