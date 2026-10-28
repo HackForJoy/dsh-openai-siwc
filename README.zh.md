@@ -144,7 +144,7 @@ pnpm pack:verify # 打包并输出 SHA-256，用于校验构建产物
 
 集成测试会挂载真实的 `@deepseek-ai/dsh-llm`、`dsh-authorization`、`dsh-credentials-local`、`dsh-attachment-local`（全部写在临时目录），并对接 `tests/helpers/mock-openai.ts`。这个 mock 严格实现官方协议：校验 PKCE，强制 `redirect_uri`/`resource`/`client_id` 一致，refresh token 轮换并拒绝重用，拒绝禁用字段，并模拟线上实测到的行为（SSE 不带 `Content-Type`、`x-oai-request-id`）。测试会把 `DSH_HOME` 指向临时目录，绝不触碰真实的 `~/.dsh`。
 
-npm 上的版本由 GitHub Actions 通过 npm Trusted Publishing 发布，并附带 provenance；用 `npm view @hackforjoy/dsh-openai-siwc --json` 或 npm 页面上的 provenance 信息即可核对每个版本对应的源码提交。
+每个 [GitHub Release](https://github.com/HackForJoy/dsh-openai-siwc/releases) 都附带与 npm 完全相同的 tarball 及 `SHA256SUMS`（用 `sha256sum -c SHA256SUMS` 校验）。从 0.1.1 起，npm 版本由 GitHub Actions 通过 npm Trusted Publishing 发布并附带 provenance，可以追溯到构建它的提交和工作流运行；0.1.0 为手动发布，没有 provenance。
 
 贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)，变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 

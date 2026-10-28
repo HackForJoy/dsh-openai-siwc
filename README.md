@@ -144,7 +144,7 @@ Install a local build into DSH: `"$DSH" plugin --profile <profile> add "file:/ab
 
 The integration tests mount the real `@deepseek-ai/dsh-llm`, `dsh-authorization`, `dsh-credentials-local`, and `dsh-attachment-local` (all on temp directories) against `tests/helpers/mock-openai.ts`. The mock implements the official protocol strictly — PKCE is verified, `redirect_uri`/`resource`/`client_id` must match, refresh tokens rotate and reuse is rejected, forbidden fields are refused — and reproduces live behavior observed on the real endpoint (SSE without `Content-Type`, `x-oai-request-id`). `DSH_HOME` points at a temp directory, so tests never touch a real `~/.dsh`.
 
-Releases on npm are published from GitHub Actions with npm Trusted Publishing and carry provenance; the npm page (or `npm view @hackforjoy/dsh-openai-siwc --json`) links each version to the source commit and workflow run that built it.
+Each [GitHub Release](https://github.com/HackForJoy/dsh-openai-siwc/releases) attaches the exact npm tarball and its `SHA256SUMS` (`sha256sum -c SHA256SUMS`). From 0.1.1 on, npm versions are published by GitHub Actions through npm Trusted Publishing with provenance, linking each version to the commit and workflow run that built it; 0.1.0 was published manually and has no provenance.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to contribute and [CHANGELOG.md](CHANGELOG.md) for release notes.
 

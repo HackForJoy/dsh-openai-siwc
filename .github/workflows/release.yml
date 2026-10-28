@@ -1,15 +1,16 @@
 name: release
 
 # On a v* tag:
-# - github-release: verify, build, and create a GitHub Release whose notes come
-#   from CHANGELOG.md, with the npm tarball and its SHA-256 attached.
-# - npm-publish: publish with npm Trusted Publishing (GitHub OIDC instead of a
-#   stored token; the version carries a provenance attestation). It runs only
-#   when the repository variable NPM_TRUSTED_PUBLISHING is "true", i.e. after
-#   the trusted publisher is configured on npmjs.com (package settings →
-#   Trusted Publisher → GitHub Actions: HackForJoy/dsh-openai-siwc, workflow
-#   release.yml, environment npm). A version already on npm is skipped, so the
-#   job can be re-run safely.
+# - github-release: verify, build the npm tarball once, and create a GitHub
+#   Release (notes from CHANGELOG.md) with that tarball and its SHA256SUMS.
+# - npm-publish: publish that same tarball file to npm, so the GitHub asset and
+#   the npm package are one file by construction (re-packing elsewhere can
+#   compress differently). Uses npm Trusted Publishing: GitHub OIDC instead of a
+#   stored token, with a provenance attestation. Runs only when the repository
+#   variable NPM_TRUSTED_PUBLISHING is "true", i.e. after the trusted publisher
+#   is configured on npmjs.com (package settings → Trusted Publisher → GitHub
+#   Actions: HackForJoy/dsh-openai-siwc, workflow release.yml, environment npm).
+#   A version already on npm is skipped, so the job can be re-run safely.
 
 on:
   push:
@@ -36,13 +37,18 @@ jobs:
           test "${GITHUB_REF_NAME}" = "v${version}" || { echo "tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm check
-      # npm pack reproduces the tarball npm publish uploads byte for byte, so the
-      # attached asset and SHA256SUMS match the package on npmjs.com.
       - name: Pack and checksum
         run: |
           npm pack
           sha256sum hackforjoy-dsh-openai-siwc-*.tgz > SHA256SUMS
           cat SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package
+          path: |
+            hackforjoy-dsh-openai-siwc-*.tgz
+            SHA256SUMS
+          if-no-files-found: error
       - name: Release notes from CHANGELOG.md
         run: |
           version="${GITHUB_REF_NAME#v}"
@@ -60,6 +66,7 @@ jobs:
         run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag hackforjoy-dsh-openai-siwc-*.tgz SHA256SUMS
 
   npm-publish:
+    needs: github-release
     if: vars.NPM_TRUSTED_PUBLISHING == 'true'
     runs-on: ubuntu-latest
     environment: npm
@@ -67,27 +74,23 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6 # version from package.json "packageManager"
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: pnpm
       - name: Use an npm CLI that supports trusted publishing
         run: npm install --global npm@^11.5.1
-      - name: Tag must match package.json version
-        run: |
-          version="$(node -p 'require("./package.json").version')"
-          test "${GITHUB_REF_NAME}" = "v${version}" || { echo "tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
+      - uses: actions/download-artifact@v8
+        with:
+          name: package
+      - name: Verify the released tarball
+        run: sha256sum -c SHA256SUMS
       - name: Skip a version that is already published
         id: published
         run: |
-          spec="$(node -p 'const p = require("./package.json"); p.name + "@" + p.version')"
+          spec="@hackforjoy/dsh-openai-siwc@${GITHUB_REF_NAME#v}"
           if npm view "$spec" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
             echo "$spec is already on npm; nothing to publish"
             echo "exists=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.published.outputs.exists != 'true'
-        run: pnpm install --frozen-lockfile --ignore-scripts
-      - if: steps.published.outputs.exists != 'true'
-        run: npm publish --access public
+        run: npm publish "./hackforjoy-dsh-openai-siwc-${GITHUB_REF_NAME#v}.tgz" --access public --registry https://registry.npmjs.org
