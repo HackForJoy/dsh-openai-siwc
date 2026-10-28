@@ -1,0 +1,61 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste access, refresh, or ID tokens, authorization codes, full callback URLs, or `.credentials.yaml` contents.** Redact anything token-shaped.
+        Security issues: use [private vulnerability reporting](https://github.com/HackForJoy/dsh-openai-siwc/security/advisories/new) instead of this form.
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: dsh-version
+    attributes:
+      label: DeepSeek Harness version
+      placeholder: "0.2.1-rc.3"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS and Node.js version
+      placeholder: "macOS 15, Node 24.8"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include the error code and message (for example `QUOTA`, `SIWC_NOT_ELIGIBLE`) and the OpenAI request id if shown.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. /siwc login
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: status
+    attributes:
+      label: Output of `/siwc status`
+      description: It never contains tokens, but check before pasting.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I removed all tokens, authorization codes, and callback URLs from this report.
+          required: true

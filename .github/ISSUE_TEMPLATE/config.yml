@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/HackForJoy/dsh-openai-siwc/security/advisories/new
+    about: Please report security issues privately, not as public issues.
+  - name: ChatGPT plan usage and limits
+    url: https://chatgpt.com/settings/usage
+    about: Usage limits, eligibility, and app access are managed in ChatGPT settings, not by this plugin.
