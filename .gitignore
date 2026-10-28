@@ -10,3 +10,6 @@ coverage/
 .env
 .env.*
 *.har
+
+# Local research notes not published with the project
+docs/research/hermes-audit.md
