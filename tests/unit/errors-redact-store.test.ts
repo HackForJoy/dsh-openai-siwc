@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { providerError, retryAfterMs } from '../../src/errors.ts'
 import { redact } from '../../src/redact.ts'
-import { needsRefresh, REFRESH_SKEW_MS } from '../../src/session.ts'
-import { parseRegistry, parseSession, toRecord, type SessionTokens } from '../../src/store.ts'
+import { needsRefresh, REFRESH_SKEW_MS, SiwcSession } from '../../src/session.ts'
+import { OFFICIAL_ENDPOINTS } from '../../src/protocol.ts'
+import { isPositiveFinite, parseRegistry, parseSession, toRecord, type SessionTokens } from '../../src/store.ts'
 import { formatStatus } from '../../src/commands.ts'
 
 describe('providerError mapping (errors-and-recovery)', () => {
@@ -86,6 +87,37 @@ describe('credential records', () => {
     expect(parseRegistry({ kind: 'grant', payload: { version: 1, hostId: 'h', registrations: [{ clientId: 'c' }, 'x'] } }))
       .toEqual({ version: 1, hostId: 'h', registrations: [] })
   })
+
+  const grant = (payload: object) => ({ kind: 'grant' as const, payload })
+
+  it('accepts normal time values', () => {
+    const valid = { ...session, expiresAt: 1_790_000_000_000, earliestRefreshAt: 1_789_999_640_000 }
+    expect(parseSession(grant(valid))).toEqual(valid)
+    // earliestRefreshAt is only required to be finite.
+    expect(parseSession(grant({ ...valid, earliestRefreshAt: 0 }))!.earliestRefreshAt).toBe(0)
+    expect(parseSession(grant({ ...valid, earliestRefreshAt: undefined }))!.earliestRefreshAt).toBeUndefined()
+  })
+
+  it.each([NaN, Infinity, -Infinity, -1, 0, '1790000000000', null])('rejects a session whose expiresAt is %s', (expiresAt) => {
+    expect(parseSession(grant({ ...session, expiresAt }))).toBeUndefined()
+  })
+
+  it.each([NaN, Infinity, -Infinity, '1790000000000', null])('rejects a session whose earliestRefreshAt is %s', (earliestRefreshAt) => {
+    expect(parseSession(grant({ ...session, expiresAt: 1_790_000_000_000, earliestRefreshAt }))).toBeUndefined()
+  })
+
+  it('treats a stored session with an invalid expiry as signed out instead of using its token', async () => {
+    const store = { readRecord: async () => grant({ ...session, expiresAt: NaN }) }
+    const logger = { warn() {}, info() {}, debug() {} }
+    const s = new SiwcSession(() => store as never, OFFICIAL_ENDPOINTS, logger as never)
+    expect(await s.current()).toBeUndefined()
+    await expect(s.accessToken()).rejects.toMatchObject({ code: 'MISSING_CREDENTIAL' })
+  })
+})
+
+describe('isPositiveFinite', () => {
+  it.each([1, 3600, 0.5])('accepts %s', (v) => expect(isPositiveFinite(v)).toBe(true))
+  it.each([NaN, Infinity, -Infinity, 0, -0, -1, '3600', null, undefined])('rejects %s', (v) => expect(isPositiveFinite(v)).toBe(false))
 })
 
 describe('needsRefresh', () => {

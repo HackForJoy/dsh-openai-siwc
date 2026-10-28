@@ -22,6 +22,7 @@ import {
 } from './protocol.ts'
 import { requestIdOf } from './errors.ts'
 import { redact } from './redact.ts'
+import { isPositiveFinite } from './store.ts'
 
 /** A protocol failure with a stable code; messages never carry token material. */
 export class SiwcAuthError extends Error {
@@ -278,7 +279,8 @@ async function tokenRequest(endpoints: SiwcEndpoints, body: Record<string, strin
       res.status,
     )
   }
-  if (!json || typeof json.access_token !== 'string' || typeof json.expires_in !== 'number') {
+  // expires_in must be a positive finite lifetime (JSON.parse("1e999") is Infinity).
+  if (!json || typeof json.access_token !== 'string' || !isPositiveFinite(json.expires_in)) {
     // A 200 that is not a token response is a transport/server problem, not a revoked grant.
     throw new SiwcAuthError('OpenAI token endpoint returned an unexpected response', 'malformed_token_response', res.status)
   }

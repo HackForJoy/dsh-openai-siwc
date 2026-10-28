@@ -65,6 +65,8 @@ export interface SessionTokens {
 const isString = (value: unknown): value is string => typeof value === 'string' && value.length > 0
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
+const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)
+export const isPositiveFinite = (value: unknown): value is number => isFiniteNumber(value) && value > 0
 
 function grantPayload(record: CredentialRecord | undefined): unknown {
   return record?.kind === 'grant' ? record.payload : undefined
@@ -88,7 +90,9 @@ export function parseSession(record: CredentialRecord | undefined): SessionToken
   const p = grantPayload(record)
   if (!isObject(p) || p.version !== 1) return
   if (!isString(p.clientId) || !isString(p.subject) || !isString(p.idToken) || !isString(p.accessToken)) return
-  if (typeof p.expiresAt !== 'number' || !Array.isArray(p.scopes) || !isString(p.savedAt)) return
+  if (!isPositiveFinite(p.expiresAt) || !Array.isArray(p.scopes) || !isString(p.savedAt)) return
+  // Optional, but a present value must be a usable time; anything else marks the record malformed.
+  if (p.earliestRefreshAt !== undefined && !isFiniteNumber(p.earliestRefreshAt)) return
   return {
     version: 1,
     clientId: p.clientId,
@@ -98,7 +102,7 @@ export function parseSession(record: CredentialRecord | undefined): SessionToken
     accessToken: p.accessToken,
     refreshToken: isString(p.refreshToken) ? p.refreshToken : undefined,
     expiresAt: p.expiresAt,
-    earliestRefreshAt: typeof p.earliestRefreshAt === 'number' ? p.earliestRefreshAt : undefined,
+    earliestRefreshAt: p.earliestRefreshAt,
     scopes: p.scopes.filter(isString),
     savedAt: p.savedAt,
   }

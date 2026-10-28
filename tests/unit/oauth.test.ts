@@ -1,4 +1,5 @@
-import { request } from 'node:http'
+import { createServer, request } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   buildAuthorizeUrl,
@@ -7,6 +8,7 @@ import {
   parseEarliestRefreshAt,
   pkceChallenge,
   readCallback,
+  refreshTokens,
   safeEqual,
   verifyIdToken,
 } from '../../src/oauth.ts'
@@ -176,5 +178,35 @@ describe('earliest_refresh_at parsing (format undocumented)', () => {
     expect(parseEarliestRefreshAt('soon')).toBeUndefined()
     expect(parseEarliestRefreshAt(null)).toBeUndefined()
     expect(parseEarliestRefreshAt(-5)).toBeUndefined()
+  })
+})
+
+describe('token response expires_in validation', () => {
+  // A raw body is needed: JSON.parse("1e999") yields Infinity, which JSON.stringify cannot produce.
+  let body = ''
+  const server = createServer((_req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' }).end(body)
+  })
+  let endpoints = OFFICIAL_ENDPOINTS
+  beforeAll(async () => {
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+    endpoints = { ...OFFICIAL_ENDPOINTS, token: `http://127.0.0.1:${(server.address() as AddressInfo).port}/token` }
+  })
+  afterAll(() => new Promise<void>((r) => server.close(() => r())))
+  const refresh = () => refreshTokens(endpoints, { clientId: 'oaiapp_1', refreshToken: 'rt' })
+
+  it('accepts a positive finite lifetime', async () => {
+    body = '{"access_token":"at","expires_in":3600}'
+    expect((await refresh()).expiresIn).toBe(3600)
+  })
+
+  it.each(['1e999', '-1e999', '-1', '0', '"3600"', 'null'])('rejects expires_in %s as a malformed response', async (raw) => {
+    body = `{"access_token":"at","expires_in":${raw}}`
+    await expect(refresh()).rejects.toMatchObject({ code: 'malformed_token_response' })
+  })
+
+  it('rejects a missing expires_in', async () => {
+    body = '{"access_token":"at"}'
+    await expect(refresh()).rejects.toMatchObject({ code: 'malformed_token_response' })
   })
 })

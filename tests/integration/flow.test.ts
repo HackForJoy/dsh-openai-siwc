@@ -130,6 +130,12 @@ describe('sign-in', () => {
     expect(registry.registrations).toHaveLength(1)
   })
 
+  it('does not store a session when the token response carries a non-positive expires_in', async () => {
+    mock.options.expiresIn = 0
+    await expect(signIn(h, mock)).rejects.toThrow(/unexpected response/)
+    expect(await h.ctx.credentials.readRecord(SESSION_KEY)).toBeUndefined()
+  })
+
   it('rejects a first registration whose callback lacks the issued client id', async () => {
     mock.options.omitClientId = true
     await expect(signIn(h, mock)).rejects.toThrow(/Registration incomplete/)
