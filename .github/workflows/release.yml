@@ -36,9 +36,11 @@ jobs:
           test "${GITHUB_REF_NAME}" = "v${version}" || { echo "tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm check
+      # npm pack reproduces the tarball npm publish uploads byte for byte, so the
+      # attached asset and SHA256SUMS match the package on npmjs.com.
       - name: Pack and checksum
         run: |
-          pnpm pack
+          npm pack
           sha256sum hackforjoy-dsh-openai-siwc-*.tgz > SHA256SUMS
           cat SHA256SUMS
       - name: Release notes from CHANGELOG.md

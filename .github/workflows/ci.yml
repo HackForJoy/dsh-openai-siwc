@@ -25,4 +25,4 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm check
       - name: Inspect package contents
-        run: pnpm pack && tar -tzf hackforjoy-dsh-openai-siwc-*.tgz
+        run: npm pack && tar -tzf hackforjoy-dsh-openai-siwc-*.tgz
