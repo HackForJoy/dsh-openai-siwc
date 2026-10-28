@@ -1,0 +1,75 @@
+{
+  "name": "dsh-openai-siwc",
+  "description": "DeepSeek Harness LLM provider using OpenAI Sign in with ChatGPT (ChatGPT plan usage for open-source clients)",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/types/**/*.d.ts",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.21.0",
+  "scripts": {
+    "build": "rm -rf lib && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "pack:verify": "pnpm build && pnpm pack && shasum -a 256 dsh-openai-siwc-*.tgz"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "eventsource-parser": "4.1.1",
+    "jose": "6.2.12"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-attachment": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-authorization": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-commands": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-credentials": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.3",
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-commands": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-atomic-write": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-attachment": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-attachment-local": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-authorization": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-commands": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-credentials": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-credentials-local": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-home-paths": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-launch-environment": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.3",
+    "@deepseek-ai/schemastery": "3.18.5",
+    "@types/node": "24.19.2",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  }
+}

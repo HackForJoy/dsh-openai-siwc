@@ -1,0 +1,5 @@
+# Bundle layer for dsh-openai-siwc: mounts the plugin under a stable id so a
+# profile's cordis.patch.yml can override its config or disable it by id.
+- insert:
+    - id: openai-siwc
+      name: dsh-openai-siwc

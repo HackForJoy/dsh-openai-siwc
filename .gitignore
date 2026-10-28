@@ -1,0 +1,12 @@
+node_modules/
+lib/
+*.tgz
+coverage/
+.DS_Store
+
+# Never commit credentials or captured traffic
+.credentials*
+*.credentials.yaml
+.env
+.env.*
+*.har
