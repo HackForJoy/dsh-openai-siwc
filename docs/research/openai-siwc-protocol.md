@@ -225,6 +225,8 @@
 | 请求 ID 头是 `x-oai-request-id` | `requestIdOf()` 依次读取 `x-oai-request-id` / `openai-request-id` / `x-request-id` |
 | 流中有未在文档中列出的 `response.metadata` 事件，以及标准的 `response.content_part.*` 事件 | 按未知事件忽略 |
 | DSH 全部工具包进 namespace 后被接受；`function_call` → `function_call_output` 往返正常 | — |
+| `max_output_tokens` **虽在文档的禁用列表中，实际被接受且生效**：设为 16 时返回 200，流以 `response.incomplete` 结束（`incomplete_details.reason: "max_output_tokens"`，`usage.output_tokens == 16`，响应回显该值）；推理 token 计入上限。以 developer 消息代替 `instructions` 时同样被接受（2026-11-03，独立探测脚本，Plus 账号，`gpt-6.1-sol`） | 仍按文档不发送：这是未文档化的行为，可能随时收紧 |
+| `temperature` 返回 400 `{"detail":"Unsupported parameter: temperature"}`，与文档一致（同上） | — |
 | 日志和会话文件（含解压后的会话日志）中扫描不到 token | — |
 
 ### 16.3 模型目录与能力
