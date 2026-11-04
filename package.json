@@ -1,7 +1,7 @@
 {
   "name": "@hackforjoy/dsh-openai-siwc",
   "description": "Community DeepSeek Harness (DSH) LLM provider using OpenAI Sign in with ChatGPT (ChatGPT plan usage for open-source clients). Not affiliated with OpenAI or DeepSeek.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "license": "MIT",
   "author": "kai-xx (https://github.com/kai-xx)",
   "homepage": "https://github.com/HackForJoy/dsh-openai-siwc#readme",
@@ -45,7 +45,8 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "dsh": ">=0.2.1-rc.3 <0.2.2-0"
   },
   "packageManager": "pnpm@11.21.0",
   "publishConfig": {
@@ -71,11 +72,11 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.5",
-    "@deepseek-ai/dsh-attachment": "0.2.1-rc.3",
-    "@deepseek-ai/dsh-authorization": "0.2.1-rc.3",
-    "@deepseek-ai/dsh-commands": "0.2.1-rc.3",
-    "@deepseek-ai/dsh-credentials": "0.2.1-rc.3",
-    "@deepseek-ai/dsh-llm": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-attachment": ">=0.2.1-rc.3 <0.2.2-0",
+    "@deepseek-ai/dsh-authorization": ">=0.2.1-rc.3 <0.2.2-0",
+    "@deepseek-ai/dsh-commands": ">=0.2.1-rc.3 <0.2.2-0",
+    "@deepseek-ai/dsh-credentials": ">=0.2.1-rc.3 <0.2.2-0",
+    "@deepseek-ai/dsh-llm": ">=0.2.1-rc.3 <0.2.2-0",
     "@deepseek-ai/schemastery": "~3.18.5"
   },
   "peerDependenciesMeta": {
