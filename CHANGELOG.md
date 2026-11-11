@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-11
+
+### Fixed
+
+- DeepSeek Harness 0.2.2-rc.1 refused to install or load the plugin, because the `engines.dsh` range stopped before 0.2.2. The range is now `>=0.2.1-rc.3 <0.2.3-0`. The `@deepseek-ai/cordis` peer accepts `~4.0.5 || ~4.1.0` and `@deepseek-ai/schemastery` accepts `~3.18.5 || ~3.19.0`, matching what DSH 0.2.1 and 0.2.2 ship. The 0.2.2 SDK changes are additive, so there are no functional changes.
+
+### Changed
+
+- Tests now run against the DSH 0.2.2-rc.1 SDK, cordis 4.1.0, and schemastery 3.19.0.
+
 ## [0.1.3] - 2026-11-04
 
 ### Fixed
@@ -39,7 +49,8 @@ First release. Compatible with DeepSeek Harness 0.2.1-rc.3.
 - Model capabilities from the account catalog: input modalities, context window, and reasoning efforts (limited to values the API accepts); inline image input with DSH's image-offload budget.
 - `/siwc status` and `/siwc models` diagnostics with redaction.
 
-[Unreleased]: https://github.com/HackForJoy/dsh-openai-siwc/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/HackForJoy/dsh-openai-siwc/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/HackForJoy/dsh-openai-siwc/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/HackForJoy/dsh-openai-siwc/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/HackForJoy/dsh-openai-siwc/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/HackForJoy/dsh-openai-siwc/compare/v0.1.0...v0.1.1

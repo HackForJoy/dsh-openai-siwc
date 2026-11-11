@@ -15,7 +15,7 @@ It is **not**:
 ## Requirements
 
 - Per OpenAI, ChatGPT plan usage is for **eligible ChatGPT Plus / Pro users** in open-source, locally run apps. An ineligible account (for example ChatGPT Free) is refused during sign-in, at the code exchange (`invalid_grant`).
-- Compatibility: DSH **0.2.1-rc.3 through 0.2.1** (`engines.dsh` `>=0.2.1-rc.3 <0.2.2-0`, `@deepseek-ai/cordis ~4.0.5`); Node.js ≥ 22. Verified against the real service on 0.2.1-rc.3; 0.2.1-rc.5 ships the same SDK code. The DSH SDK is still pre-release and can change incompatibly between minor versions, so the range stops before 0.2.2 and a matching plugin release follows each DSH minor update.
+- Compatibility: DSH **0.2.1-rc.3 through 0.2.2** (`engines.dsh` `>=0.2.1-rc.3 <0.2.3-0`, `@deepseek-ai/cordis ~4.0.5 || ~4.1.0`); Node.js ≥ 22. Verified against the real service on 0.2.1-rc.3. On 0.2.2-rc.1, the tests pass and the plugin installs and loads in the real app. The DSH SDK is still pre-release and can change incompatibly between minor versions, so the range stops before 0.2.3 and a matching plugin release follows each DSH minor update.
 - For Plus users, the five-hour usage limit is shared across every app that uses the ChatGPT plan. Manage usage and app access at <https://chatgpt.com/settings/usage>.
 
 ## Install

@@ -15,7 +15,7 @@
 ## 使用条件
 
 - OpenAI 官方说明：ChatGPT plan usage 面向**合格的 ChatGPT Plus / Pro 用户**，适用于开源、本地运行的应用。不符合资格的账号（例如 ChatGPT Free）在登录的换码阶段就会被拒绝（`invalid_grant`）。
-- 兼容性：DSH **0.2.1-rc.3 至 0.2.1**（`engines.dsh` `>=0.2.1-rc.3 <0.2.2-0`，`@deepseek-ai/cordis ~4.0.5`）；Node.js ≥ 22。真实环境验收在 0.2.1-rc.3 上完成；0.2.1-rc.5 的 SDK 代码与之相同。DSH SDK 仍是预发布版本，次版本之间可能存在不兼容变更，因此范围止于 0.2.2 之前，DSH 每次次版本升级后都会发布对应的插件版本。
+- 兼容性：DSH **0.2.1-rc.3 至 0.2.2**（`engines.dsh` `>=0.2.1-rc.3 <0.2.3-0`，`@deepseek-ai/cordis ~4.0.5 || ~4.1.0`）；Node.js ≥ 22。真实环境验收在 0.2.1-rc.3 上完成；在 0.2.2-rc.1 上测试全部通过，插件也能在真实应用中安装并加载。DSH SDK 仍是预发布版本，次版本之间可能存在不兼容变更，因此范围止于 0.2.3 之前，DSH 每次次版本升级后都会发布对应的插件版本。
 - Plus 用户的 5 小时用量上限在所有使用 ChatGPT plan 的应用间共享。用量与授权管理：<https://chatgpt.com/settings/usage>。
 
 ## 安装
